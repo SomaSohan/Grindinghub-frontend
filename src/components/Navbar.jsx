@@ -1,11 +1,30 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Home, LogOut, User, Factory, ShieldCheck, MessageSquare, Briefcase } from 'lucide-react';
+import { Home, LogOut, User, Factory, ShieldCheck, MessageSquare, Briefcase, Bell } from 'lucide-react';
+import api from '../services/api';
 
 const Navbar = () => {
     const { user, logout } = useContext(AuthContext);
     const navigate = useNavigate();
+    const [unread, setUnread] = useState({ chats: 0, orders: 0 });
+
+    useEffect(() => {
+        let interval;
+        if (user && (user.role === 'FACTORY' || user.role === 'CLIENT')) {
+            const fetchNotifications = async () => {
+                try {
+                    const res = await api.get(`/notifications/${user.userId}/${user.role}`);
+                    setUnread(res.data);
+                } catch (err) {
+                    // Ignore errors silently for polling
+                }
+            };
+            fetchNotifications();
+            interval = setInterval(fetchNotifications, 10000); // Check every 10 seconds
+        }
+        return () => clearInterval(interval);
+    }, [user]);
 
     return (
         <nav style={styles.nav}>
@@ -38,13 +57,19 @@ const Navbar = () => {
                             <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
 
                             {(user.role === 'CLIENT' || user.role === 'FACTORY') && (
-                                <Link to="/work-orders" style={{ ...styles.link }}>
+                                <Link to="/work-orders" style={{ ...styles.link, position: 'relative' }}>
                                     <Briefcase size={18} /> Orders
+                                    {unread.orders > 0 && (
+                                        <span style={styles.badge}>{unread.orders}</span>
+                                    )}
                                 </Link>
                             )}
 
-                            <Link to="/messages" style={{ ...styles.link, marginLeft: '5px', marginRight: '5px' }}>
+                            <Link to="/messages" style={{ ...styles.link, position: 'relative', marginLeft: '5px', marginRight: '5px' }}>
                                 <MessageSquare size={18} /> Messages
+                                {unread.chats > 0 && (
+                                    <span style={styles.badge}>{unread.chats}</span>
+                                )}
                             </Link>
 
                             <button onClick={logout} className="btn-secondary" style={styles.logoutBtn}>
@@ -111,6 +136,21 @@ const styles = {
         alignItems: 'center',
         gap: '6px',
         transition: 'color 0.2s',
+    },
+    badge: {
+        position: 'absolute',
+        top: '-8px',
+        right: '-12px',
+        backgroundColor: '#ef4444',
+        color: 'white',
+        fontSize: '0.7rem',
+        fontWeight: 'bold',
+        padding: '2px 6px',
+        borderRadius: '10px',
+        border: '2px solid rgba(2, 6, 23, 1)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
     },
     logoutBtn: {
         padding: '8px 16px',
