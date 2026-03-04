@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://grindinghub-backend.onrender.com/api',
+  baseURL: '/api', // Vite proxy forwards this to http://localhost:9090/api — no CORS!
   headers: {
     'Content-Type': 'application/json',
   },
