@@ -28,6 +28,13 @@ const Register = () => {
             return;
         }
 
+        const phoneRegex = /^\d{10}$/;
+        if (!phoneRegex.test(formData.phone)) {
+            setError('Please enter a valid 10-digit phone number.');
+            setLoading(false);
+            return;
+        }
+
         try {
             const response = await api.post('/users/register', formData);
             setLoading(false);
